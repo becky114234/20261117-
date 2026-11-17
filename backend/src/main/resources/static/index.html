@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <!-- 設定網頁編碼、手機版縮放方式與瀏覽器分頁標題。 -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>俄羅斯方塊｜開發企劃書</title>
+  <style>
+    /* 匯入遊戲風格字型，並集中定義整頁會重複使用的顏色。 */
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+    :root { --ink: #e8f7ff; --muted: #8da7b8; --line: #194866; --panel: #071a2a; --cyan: #55d8ff; --gold: #ffc83d; --red: #ff6874; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--ink); font-family: 'Noto Sans TC', sans-serif; background: #020911; background-image: radial-gradient(circle at 50% 0%, #10314b 0, transparent 42%), linear-gradient(135deg, #020911 25%, #071827 100%); }
+    .shell { width: min(1180px, calc(100% - 28px)); margin: auto; padding: 28px 0 24px; }
+    .masthead { display: flex; align-items: end; gap: 22px; padding: 10px 12px 20px; border-bottom: 1px solid var(--line); }
+    .kicker { color: var(--cyan); letter-spacing: .22em; font: 600 12px 'Chakra Petch', sans-serif; }
+    h1 { margin: 2px 0 0; font-size: clamp(2rem, 5vw, 4.25rem); line-height: .95; font-weight: 900; letter-spacing: .04em; }
+    h1 span { color: var(--gold); }
+    .masthead p { margin: 0 0 4px auto; max-width: 230px; color: var(--muted); font-size: 12px; line-height: 1.7; text-align: right; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 18px; margin-top: 18px; }
+    .stage, .panel { border: 1px solid var(--line); background: rgba(5, 22, 36, .84); box-shadow: 0 18px 45px rgba(0,0,0,.2); }
+    .stage { padding: 18px; }
+    .stage-top, .panel-title { display: flex; justify-content: space-between; align-items: center; }
+    .stage-top { margin-bottom: 12px; }
+    .stage-top strong, .panel-title { color: var(--cyan); font: 600 14px 'Chakra Petch', sans-serif; letter-spacing: .08em; }
+    .status { color: var(--gold); font-size: 12px; }
+    .board-wrap { display: grid; place-items: center; padding: 14px; border: 1px solid #21587a; background: #030b14; }
+    #board { display: block; width: min(100%, 420px); aspect-ratio: 10 / 17; image-rendering: pixelated; background: #02070d; }
+    .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+    button { min-height: 44px; border: 1px solid #286283; border-radius: 4px; color: var(--ink); background: #0b263a; font: 700 16px 'Chakra Petch', sans-serif; cursor: pointer; transition: background .15s, transform .15s; touch-action: manipulation; }
+    button.start { grid-column: span 4; color: #071827; border-color: var(--gold); background: var(--gold); }
+    button.start:hover, button.start:focus-visible { background: #ffe27e; }
+    button:hover, button:focus-visible { background: #124664; outline: 2px solid var(--cyan); outline-offset: 2px; }
+    button:active { transform: translateY(2px); }
+    .wide { grid-column: span 2; }
+    .side { display: grid; gap: 14px; align-content: start; }
+    .panel { padding: 15px; }
+    .panel-title { margin-bottom: 14px; }
+    .panel-title small { color: var(--muted); font: 400 11px 'Noto Sans TC', sans-serif; letter-spacing: 0; }
+    .account-form { display: grid; gap: 7px; }.account-form input { width: 100%; padding: 9px; border: 1px solid #28536a; border-radius: 3px; color: var(--ink); background: #020b14; font: 13px 'Noto Sans TC', sans-serif; }.account-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }.account-actions button { min-height: 36px; font-size: 13px; }.account-status { min-height: 18px; color: var(--muted); font-size: 11px; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .stat { padding: 10px 11px; border-left: 3px solid var(--cyan); background: #061321; }
+    .stat:nth-child(2) { border-color: var(--gold); }.stat:nth-child(3) { border-color: #bd6cff; }.stat:nth-child(4) { border-color: var(--red); }
+    .stat label { display: block; color: var(--muted); font-size: 11px; }.stat b { display: block; margin-top: 3px; font: 600 24px 'Chakra Petch', sans-serif; }
+    #next { display: block; width: 100%; height: 108px; background: #030b14; border: 1px solid #173d56; image-rendering: pixelated; }
+    .how { margin: 0; padding-left: 20px; color: #bdd0db; font-size: 13px; line-height: 2; }.how kbd { color: var(--gold); font-family: 'Chakra Petch', sans-serif; }
+    .pieces { position: relative; display: block; height: 168px; overflow: hidden; border: 1px solid #254354; background-color: #020509; background-image: linear-gradient(#20303a 1px, transparent 1px), linear-gradient(90deg, #20303a 1px, transparent 1px); background-size: 28px 28px; }.piece-chip { position: absolute; display: grid; grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(2, 28px); width: 84px; height: 56px; }.piece-chip i { display: block; width: 26px; height: 26px; margin: 1px; background: var(--piece); box-shadow: inset 0 3px rgba(255,255,255,.18); }.piece-chip .piece-i { left: 0; top: 0; width: 112px; grid-template-columns: repeat(4, 28px); grid-template-rows: 28px; }.piece-chip .piece-i i { grid-column: auto; }.piece-chip .piece-o { left: 0; top: 0; }.piece-chip .piece-t { left: 140px; top: 84px; }.piece-chip .piece-s { left: 196px; top: 0; }.piece-chip .piece-z { left: 84px; top: 0; }.piece-chip .piece-j { left: 84px; top: 84px; }.piece-chip .piece-l { left: 0; top: 84px; }.piece-chip .piece-o i:nth-child(1), .piece-chip .piece-o i:nth-child(2), .piece-chip .piece-t i:nth-child(2), .piece-chip .piece-t i:nth-child(3), .piece-chip .piece-t i:nth-child(4), .piece-chip .piece-s i:nth-child(1), .piece-chip .piece-s i:nth-child(2), .piece-chip .piece-s i:nth-child(3), .piece-chip .piece-z i:nth-child(1), .piece-chip .piece-z i:nth-child(2), .piece-chip .piece-z i:nth-child(3), .piece-chip .piece-j i:nth-child(1), .piece-chip .piece-j i:nth-child(2), .piece-chip .piece-j i:nth-child(3), .piece-chip .piece-l i:nth-child(1), .piece-chip .piece-l i:nth-child(2), .piece-chip .piece-l i:nth-child(3) { grid-column: auto; }.piece-chip .piece-o i:nth-child(3), .piece-chip .piece-o i:nth-child(4) { grid-row: 2; }.piece-chip .piece-t i:nth-child(1) { grid-column: 2; }.piece-chip .piece-t i:nth-child(2) { grid-column: 1; grid-row: 2; }.piece-chip .piece-t i:nth-child(3) { grid-column: 2; grid-row: 2; }.piece-chip .piece-t i:nth-child(4) { grid-column: 3; grid-row: 2; }.piece-chip .piece-s i:nth-child(1) { grid-column: 2; }.piece-chip .piece-s i:nth-child(2) { grid-column: 3; }.piece-chip .piece-s i:nth-child(3) { grid-column: 1; grid-row: 2; }.piece-chip .piece-s i:nth-child(4) { grid-column: 2; grid-row: 2; }.piece-chip .piece-z i:nth-child(1) { grid-column: 1; }.piece-chip .piece-z i:nth-child(2) { grid-column: 2; }.piece-chip .piece-z i:nth-child(3) { grid-column: 2; grid-row: 2; }.piece-chip .piece-z i:nth-child(4) { grid-column: 3; grid-row: 2; }.piece-chip .piece-j i:nth-child(1) { grid-column: 1; }.piece-chip .piece-j i:nth-child(2) { grid-column: 1; grid-row: 2; }.piece-chip .piece-j i:nth-child(3) { grid-column: 2; grid-row: 2; }.piece-chip .piece-j i:nth-child(4) { grid-column: 3; grid-row: 2; }.piece-chip .piece-l i:nth-child(1) { grid-column: 3; }.piece-chip .piece-l i:nth-child(2) { grid-column: 1; grid-row: 2; }.piece-chip .piece-l i:nth-child(3) { grid-column: 2; grid-row: 2; }.piece-chip .piece-l i:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .piece-chip.piece-i { left: 0; top: 0; width: 112px; grid-template-columns: repeat(4, 28px); grid-template-rows: 28px; }
+    .piece-chip.piece-o { left: 0; top: 0; }
+    .piece-chip.piece-t { left: 140px; top: 84px; }
+    .piece-chip.piece-s { left: 196px; top: 0; }
+    .piece-chip.piece-z { left: 84px; top: 0; }
+    .piece-chip.piece-j { left: 84px; top: 84px; }
+    .piece-chip.piece-l { left: 0; top: 84px; }
+    .piece-chip.piece-i { left: calc(100% - 28px); top: 0; width: 28px; height: 112px; grid-template-columns: 28px; grid-template-rows: repeat(4, 28px); }
+    .piece-chip.piece-o { left: 0; top: 0; }
+    .piece-chip.piece-z { left: 112px; top: 0; }
+    .piece-chip.piece-s { left: 196px; top: 0; }
+    .piece-chip.piece-l { left: 0; top: 84px; }
+    .piece-chip.piece-j { left: 84px; top: 84px; }
+    .piece-chip.piece-t { left: 168px; top: 84px; }
+    .piece-chip.piece-o i:nth-child(1) { grid-column: 1; grid-row: 1; }.piece-chip.piece-o i:nth-child(2) { grid-column: 2; grid-row: 1; }.piece-chip.piece-o i:nth-child(3) { grid-column: 1; grid-row: 2; }.piece-chip.piece-o i:nth-child(4) { grid-column: 2; grid-row: 2; }
+    .piece-chip.piece-z i:nth-child(1) { grid-column: 1; grid-row: 1; }.piece-chip.piece-z i:nth-child(2) { grid-column: 2; grid-row: 1; }.piece-chip.piece-z i:nth-child(3) { grid-column: 2; grid-row: 2; }.piece-chip.piece-z i:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .piece-chip.piece-s i:nth-child(1) { grid-column: 2; grid-row: 1; }.piece-chip.piece-s i:nth-child(2) { grid-column: 3; grid-row: 1; }.piece-chip.piece-s i:nth-child(3) { grid-column: 1; grid-row: 2; }.piece-chip.piece-s i:nth-child(4) { grid-column: 2; grid-row: 2; }
+    .piece-chip.piece-l i:nth-child(1) { grid-column: 1; grid-row: 1; }.piece-chip.piece-l i:nth-child(2) { grid-column: 1; grid-row: 2; }.piece-chip.piece-l i:nth-child(3) { grid-column: 2; grid-row: 2; }.piece-chip.piece-l i:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .piece-chip.piece-j i:nth-child(1) { grid-column: 1; grid-row: 1; }.piece-chip.piece-j i:nth-child(2) { grid-column: 1; grid-row: 2; }.piece-chip.piece-j i:nth-child(3) { grid-column: 2; grid-row: 2; }.piece-chip.piece-j i:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .piece-chip.piece-t i:nth-child(1) { grid-column: 2; grid-row: 1; }.piece-chip.piece-t i:nth-child(2) { grid-column: 1; grid-row: 2; }.piece-chip.piece-t i:nth-child(3) { grid-column: 2; grid-row: 2; }.piece-chip.piece-t i:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .pieces { background-size: 8.3333% 28px; }
+    .pieces .piece-chip { width: 25%; grid-template-columns: repeat(3, 33.333%); }
+    .pieces .piece-chip i { width: calc(100% - 2px); }
+    .pieces .piece-chip.piece-i { left: 91.6667%; width: 8.3333%; grid-template-columns: 100%; }
+    .pieces .piece-chip.piece-o { left: 0; }.pieces .piece-chip.piece-z { left: 25%; }.pieces .piece-chip.piece-s { left: 58.3333%; }
+    .pieces .piece-chip.piece-l { left: 0; }.pieces .piece-chip.piece-j { left: 33.3333%; }.pieces .piece-chip.piece-t { left: 66.6667%; }
+    .footer { display: flex; justify-content: space-between; gap: 16px; padding: 18px 12px 0; color: var(--muted); font-size: 12px; }.footer strong { color: var(--gold); font-size: 15px; }
+    @media (max-width: 760px) { .shell { width: min(100% - 18px, 520px); padding-top: 14px; }.masthead { align-items: start; flex-direction: column; gap: 8px; }.masthead p { margin: 0; text-align: left; }.layout { grid-template-columns: 1fr; }.stage { padding: 12px; }.side { grid-template-columns: 1fr 1fr; }.side .panel:first-child { grid-column: span 2; }.footer { flex-direction: column; gap: 5px; } }
+    @media (max-width: 420px) { .side { display: grid; grid-template-columns: 1fr; }.side .panel:first-child { grid-column: auto; } h1 { font-size: 2.15rem; } }
+    /* 以上是桌面版樣式；以下媒體查詢讓版面在手機上改為單欄。 */
+  </style>
+</head>
+<body>
+  <!-- 頁首：顯示遊戲名稱與簡短介紹。 -->
+  <main class="shell">
+    <header class="masthead"><div><div class="kicker">GAME DESIGN / 01</div><h1>俄羅斯方塊 <span>開發企劃書</span></h1></div><p>經典、簡單、耐玩。<br />一款由瀏覽器直接啟動的方塊作品。</p></header>
+    <div class="layout">
+      <!-- 左側遊戲區：棋盤與觸控按鈕。 -->
+      <section class="stage" aria-label="遊戲區域"><div class="stage-top"><strong>01 / PLAYFIELD</strong><span class="status" id="status">READY</span></div><div class="board-wrap"><canvas id="board" width="300" height="510" aria-label="俄羅斯方塊棋盤"></canvas></div><div class="controls"><button class="start" data-action="start">開始遊戲</button><button class="start" data-action="restart">再來一局</button><button data-action="left" aria-label="向左移動">←</button><button data-action="rotate" aria-label="旋轉">↻</button><button data-action="right" aria-label="向右移動">→</button><button data-action="down" aria-label="加速下落">↓</button><button class="wide" data-action="drop">SPACE / 直接落到底</button><button class="wide" data-action="pause">P / 暫停</button></div></section>
+      <!-- 右側資訊區：帳戶、戰績、下一塊與操作說明。 -->
+      <aside class="side"><section class="panel"><div class="panel-title">02 / 即時戰績 <small>LIVE RUN</small></div><div class="stats"><div class="stat"><label>SCORE</label><b id="score">00000</b></div><div class="stat"><label>LEVEL</label><b id="level">1</b></div><div class="stat"><label>LINES</label><b id="lines">0</b></div><div class="stat"><label>BEST</label><b id="best">00000</b></div></div></section><section class="panel"><div class="panel-title">03 / 下一塊 <small>NEXT PIECE</small></div><canvas id="next" width="280" height="100" aria-label="下一個方塊"></canvas></section><section class="panel"><div class="panel-title">04 / 操作方式</div><ol class="how"><li><kbd>← →</kbd> 左右移動</li><li><kbd>↓</kbd> 加速下落</li><li><kbd>↑ / X</kbd> 順時針旋轉</li><li><kbd>Space</kbd> 直接落到底</li><li><kbd>P</kbd> 暫停，<kbd>R</kbd> 重開</li></ol></section><section class="panel"><div class="panel-title">05 / 七種方塊</div><div class="pieces"><div class="piece-chip piece-o"><i style="--piece:#ffe14c"></i><i style="--piece:#ffe14c"></i><i style="--piece:#ffe14c"></i><i style="--piece:#ffe14c"></i></div><div class="piece-chip piece-z"><i style="--piece:#ff6370"></i><i style="--piece:#ff6370"></i><i style="--piece:#ff6370"></i><i style="--piece:#ff6370"></i></div><div class="piece-chip piece-s"><i style="--piece:#76d64b"></i><i style="--piece:#76d64b"></i><i style="--piece:#76d64b"></i><i style="--piece:#76d64b"></i></div><div class="piece-chip piece-i"><i style="--piece:#4ddfff"></i><i style="--piece:#4ddfff"></i><i style="--piece:#4ddfff"></i><i style="--piece:#4ddfff"></i></div><div class="piece-chip piece-l"><i style="--piece:#ffae35"></i><i style="--piece:#ffae35"></i><i style="--piece:#ffae35"></i><i style="--piece:#ffae35"></i></div><div class="piece-chip piece-j"><i style="--piece:#4c8dff"></i><i style="--piece:#4c8dff"></i><i style="--piece:#4c8dff"></i><i style="--piece:#4c8dff"></i></div><div class="piece-chip piece-t"><i style="--piece:#bd6cff"></i><i style="--piece:#bd6cff"></i><i style="--piece:#bd6cff"></i><i style="--piece:#bd6cff"></i></div></div></section></aside>
+    </div>
+    <footer class="footer"><span>消行越多，分數越高。每 10 行提升一級，速度同步加快。</span><strong>加油！你一定做得到！</strong></footer>
+  </main>
+  <script>
+    // 動態建立帳戶面板，並準備登入 Token。
+    const side = document.querySelector('.side'); const account = document.createElement('section'); account.className = 'panel'; account.innerHTML = '<div class="panel-title">02 / 玩家帳戶 <small>ACCOUNT</small></div><div class="account-form"><input id="username" placeholder="使用者名稱" autocomplete="username"><input id="email" placeholder="Email（註冊時填寫）" type="email" autocomplete="email"><input id="password" placeholder="密碼／新密碼（至少 6 字元）" type="password" autocomplete="current-password"><div class="account-actions"><button id="login-button">登入</button><button id="register-button">註冊</button><button id="reset-password-button">重設密碼</button></div><div class="account-status" id="account-status">尚未登入，分數不會保存</div></div>'; side.prepend(account);
+    let authToken = localStorage.tetrisToken || ''; const accountStatus = () => document.getElementById('account-status');
+    async function authRequest(path, payload) { const request = payload || { username: document.getElementById('username').value, email: document.getElementById('email').value, password: document.getElementById('password').value }; const response = await fetch(path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(request) }); const data = await response.json().catch(() => ({})); if (!response.ok) { const message = data.detail || (response.status === 409 ? '使用者名稱或 Email 已存在，請改用登入或換一組資料' : response.status === 401 ? '帳號或密碼錯誤，請確認後再試' : data.message || data.error || '操作失敗'); throw new Error(message); } return data; }
+    function loggedIn(data) { authToken = data.token; localStorage.tetrisToken = authToken; accountStatus().textContent = `已登入：${data.user.username}，本局結束會自動保存`; }
+    document.getElementById('register-button').addEventListener('click', async () => { try { loggedIn(await authRequest('/api/auth/register')); } catch (error) { accountStatus().textContent = error.message; } });
+    document.getElementById('login-button').addEventListener('click', async () => { try { loggedIn(await authRequest('/api/auth/login')); } catch (error) { accountStatus().textContent = error.message; } });
+    document.getElementById('reset-password-button').addEventListener('click', async () => { try { await authRequest('/api/auth/reset-password', { username: document.getElementById('username').value, email: document.getElementById('email').value, newPassword: document.getElementById('password').value }); accountStatus().textContent = '密碼已重設，請使用新密碼登入'; } catch (error) { accountStatus().textContent = error.message; } });
+    async function saveGame() { if (!authToken) return; const payload = { points: score, lines, level, result: 'GAME_OVER' }; const headers = {'Content-Type':'application/json', Authorization: `Bearer ${authToken}`}; await Promise.all([fetch('/api/scores', {method:'POST', headers, body:JSON.stringify(payload)}), fetch('/api/games', {method:'POST', headers, body:JSON.stringify(payload)})]); accountStatus().textContent = '本局分數與遊戲紀錄已保存'; }
+    // 取得兩個 Canvas：主棋盤與下一個方塊預覽區。
+    const canvas = document.getElementById('board'); const context = canvas.getContext('2d'); const nextCanvas = document.getElementById('next'); const nextContext = nextCanvas.getContext('2d');
+    // 顏色索引與七種俄羅斯方塊的矩陣形狀。
+    const colors = ['#000', '#4ddfff', '#ffe14c', '#bd6cff', '#76d64b', '#ff6370', '#4c8dff', '#ffae35'];
+    const shapes = [[[1,1,1,1]], [[2,2],[2,2]], [[0,3,0],[3,3,3]], [[0,4,4],[4,4,0]], [[5,5,0],[0,5,5]], [[6,0,0],[6,6,6]], [[0,0,7],[7,7,7]]];
+    let arena, current, next, score = 0, lines = 0, level = 1, dropCounter = 0, lastTime = 0, paused = false, over = false;
+    const piece = () => { const matrix = shapes[Math.floor(Math.random() * shapes.length)].map(row => row.slice()); return { matrix, pos: { x: Math.floor(10 / 2) - Math.ceil(matrix[0].length / 2), y: 0 } }; };
+    // 重設棋盤、分數與目前方塊，等待玩家開始。
+    function reset() { arena = Array.from({ length: 17 }, () => Array(10).fill(0)); score = 0; lines = 0; level = 1; paused = true; over = false; current = piece(); next = piece(); update(); dropCounter = 0; document.getElementById('status').textContent = 'READY'; }
+    function collide(arena, player) { for (let y = 0; y < player.matrix.length; y++) for (let x = 0; x < player.matrix[y].length; x++) if (player.matrix[y][x] && (arena[y + player.pos.y]?.[x + player.pos.x] ?? 1) !== 0) return true; return false; }
+    function merge() { current.matrix.forEach((row, y) => row.forEach((value, x) => { if (value) arena[y + current.pos.y][x + current.pos.x] = value; })); }
+    function rotate(matrix, dir) { const rotated = matrix[0].map((_, column) => matrix.map(row => row[column])); if (dir > 0) rotated.forEach(row => row.reverse()); else rotated.reverse(); matrix.length = 0; matrix.push(...rotated); }
+    function playerRotate() { const position = current.pos.x; let offset = 1; rotate(current.matrix, 1); while (collide(arena, current)) { current.pos.x += offset; offset = -(offset + (offset > 0 ? 1 : -1)); if (offset > current.matrix[0].length) { rotate(current.matrix, -1); current.pos.x = position; return; } } }
+    function playerMove(dir) { current.pos.x += dir; if (collide(arena, current)) current.pos.x -= dir; }
+    // 方塊下移；碰到底部或其他方塊時固定、消行並換下一塊。
+    function playerDrop() { current.pos.y++; if (collide(arena, current)) { current.pos.y--; merge(); sweep(); current = next; next = piece(); if (collide(arena, current)) { over = true; document.getElementById('status').textContent = 'GAME OVER'; saveGame().catch(() => accountStatus().textContent = '保存失敗，請確認登入狀態'); } } dropCounter = 0; }
+    function hardDrop() { while (!collide(arena, current)) current.pos.y++; current.pos.y--; playerDrop(); }
+    // 找出填滿的列並移除；依消除列數計算分數與等級。
+    function sweep() { let cleared = 0; outer: for (let y = arena.length - 1; y >= 0; y--) { for (let x = 0; x < arena[y].length; x++) if (!arena[y][x]) continue outer; arena.splice(y, 1); arena.unshift(Array(10).fill(0)); y++; cleared++; } if (cleared) { score += [0,100,300,500,800][cleared] * level; lines += cleared; level = Math.floor(lines / 10) + 1; } }
+    function drawCell(ctx, value, x, y, size) { ctx.fillStyle = colors[value]; ctx.fillRect(x * size + 1, y * size + 1, size - 2, size - 2); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x * size + 2, y * size + 2, size - 5, 3); }
+    function drawMatrix(ctx, matrix, offset, size) { matrix.forEach((row, y) => row.forEach((value, x) => { if (value) drawCell(ctx, value, x + offset.x, y + offset.y, size); })); }
+    // 清空並重畫棋盤、目前方塊與下一塊預覽。
+    function draw() { context.fillStyle = '#02070d'; context.fillRect(0, 0, canvas.width, canvas.height); context.strokeStyle = 'rgba(91,155,190,.18)'; context.lineWidth = 1; for (let x=0;x<=10;x++) { context.beginPath(); context.moveTo(x*30,0); context.lineTo(x*30,510); context.stroke(); } for (let y=0;y<=17;y++) { context.beginPath(); context.moveTo(0,y*30); context.lineTo(300,y*30); context.stroke(); } drawMatrix(context, arena, {x:0,y:0}, 30); if (!over) drawMatrix(context, current.matrix, current.pos, 30); nextContext.fillStyle = '#030b14'; nextContext.fillRect(0,0,280,100); drawMatrix(nextContext, next.matrix, { x: Math.floor((9 - next.matrix[0].length) / 2), y: Math.floor((4 - next.matrix.length) / 2) }, 22); }
+    function update() { document.getElementById('score').textContent = String(score).padStart(5, '0'); document.getElementById('lines').textContent = lines; document.getElementById('level').textContent = level; document.getElementById('best').textContent = String(Math.max(score, Number(localStorage.tetrisBest || 0))).padStart(5, '0'); draw(); }
+    function tick(time=0) { const delta = time - lastTime; lastTime = time; if (!paused && !over) { dropCounter += delta; if (dropCounter > Math.max(90, 800 - (level - 1) * 65)) playerDrop(); update(); } requestAnimationFrame(tick); }
+    // 統一處理按鈕與鍵盤傳入的遊戲動作。
+    function action(name) { if (name === 'start') { if (over) reset(); paused = false; document.getElementById('status').textContent = 'PLAYING'; update(); return; } if (name === 'restart') { reset(); paused = false; document.getElementById('status').textContent = 'PLAYING'; update(); return; } if (over || paused && name !== 'pause') return; if (name === 'left') playerMove(-1); if (name === 'right') playerMove(1); if (name === 'down') playerDrop(); if (name === 'rotate') playerRotate(); if (name === 'drop') hardDrop(); if (name === 'pause') { paused = !paused; document.getElementById('status').textContent = paused ? 'PAUSED' : 'PLAYING'; } update(); }
+    // 綁定畫面按鈕、鍵盤快捷鍵，並啟動遊戲迴圈。
+    document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => action(button.dataset.action)));
+    document.addEventListener('keydown', event => { const keys = { ArrowLeft:'left', ArrowRight:'right', ArrowDown:'down', ArrowUp:'rotate', x:'rotate', X:'rotate', ' ':'drop', p:'pause', P:'pause' }; if (event.key === 'r' || event.key === 'R') reset(); else if (keys[event.key]) { event.preventDefault(); action(keys[event.key]); } });
+    reset(); requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

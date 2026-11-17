@@ -1,0 +1,1 @@
+-- 使用者由 POST /api/auth/register API 建立，啟動時不預先塞入帳戶資料。

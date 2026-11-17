@@ -1,0 +1,14 @@
+**/target/
+**/build/
+**/*.class
+**/.vscode/
+**/.idea/
+**/*.log
+backend/bin/
+**/.env
+**/.env.*
+!**/.env.example
+**/application-local.properties
+**/application-*.local.properties
+.DS_Store
+Thumbs.db
